@@ -1,0 +1,184 @@
+const express = require("express");
+const cors = require("cors");
+const router = express.Router();
+
+const corsOptions = {
+  origin: "*", // Allow requests from any origin during development
+  methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+  optionsSuccessStatus: 204,
+};
+
+router.use(cors(corsOptions));
+
+const users = {};
+
+// CREATE A USER Define the route for user registration
+router.post("/register", async (req, res) => {
+  const { email, password, username } = req.body;
+  console.log(JSON.stringify(req.body.username, null, 2)); // Log the req.body as a formatted JSON string
+  console.log("Registration started...");
+
+  //Check if email already exists
+  const existingUserArray = Object.values(users).find(
+    (user) => user.email === email
+  );
+  if (existingUserArray) {
+    return res.status(400).json({ error_message: "Email already registered" });
+  }
+
+  // Implement your user registration logic here
+  const id = generateID();
+  console.log(`Generated ID: ${id}`);
+
+  users[id] = { id, email, password, username };
+  console.log(`User registered with ID: ${id}`);
+  console.log(`Users are ${JSON.stringify(users, null, 2)}`);
+
+  // For testing purposes, send a success JSON response
+  res.status(201).json({
+    message: "User registered successfully",
+  });
+});
+
+//LOGIN A USER
+router.post("/", async (req, res) => {
+  const { email, password } = req.body;
+
+  // For testing purposes, check if the user exists in the in-memory "users" object
+  const userArray = Object.values(users);
+  const user = userArray.find(
+    (u) => u.email === email && u.password === password
+  );
+  if (user) {
+    res.status(200).json({
+      message: "User logged in successfully",
+      userId: user.id,
+      username: user.username,
+    });
+  } else {
+    res.status(401).json({ error_message: "Invalid credentials." });
+  }
+});
+
+// Create an array to store threads
+const threadList = [];
+const generateID = () => Math.random().toString(36).substring(2, 10);
+
+// POST route to create a new thread
+router.post("/create/thread", async (req, res) => {
+  const { thread, userId, username } = req.body;
+  console.log(
+    `The req.body in threads-route ${JSON.stringify(req.body, null, 2)}`
+  );
+  const threadId = generateID();
+
+  // Check if both thread and userId are provided
+  if (!thread || !userId) {
+    return res
+      .status(400)
+      .json({ error: "Both thread and userId are required." });
+  }
+
+  // Add post details to the array
+  threadList.unshift({
+    id: threadId,
+    title: thread,
+    userId,
+    username,
+    replies: [],
+    likes: [],
+  });
+  console.log(`The threadlist is ${JSON.stringify(threadList, null, 2)}`);
+  // Send a success response with the updated thread list
+  res
+    .status(201)
+    .json({ message: "Thread created successfully", threads: threadList });
+});
+
+// Add a GET route on the server that returns all the threads.
+router.get("/all/threads", async (req, res) => {
+  res.json({
+    threads: threadList,
+  });
+});
+
+//Crate an array to store likes
+const threadLikes = {};
+
+//Create a POST route on the server that validates the reaction.
+// POST route to handle liking a thread
+router.post("/thread/like", async (req, res) => {
+  console.log(`req.body is ${req.body}`);
+
+  const { threadId, userId } = req.body;
+
+  // Find the thread by its ID
+  const thread = threadList.find((thread) => thread.id === threadId);
+
+  // Check if the thread exists
+  if (!thread) {
+    return res.status(404).json({ error_message: "Thread not found." });
+  }
+
+  // Check if the user has already liked the thread
+  // Check if the user has already liked the thread
+  if (threadLikes[threadId] && threadLikes[threadId].includes(userId)) {
+    return res
+      .status(400)
+      .json({ error_message: "You've already liked this thread." });
+  }
+
+  // Add the user to the likes array for this thread
+  if (!threadLikes[threadId]) {
+    threadLikes[threadId] = [];
+  }
+
+  // Add the user to the likes array
+  threadLikes[threadId].push(userId);
+
+  // Send a success response
+  return res.json({ message: "You've reacted to the post!" });
+});
+
+router.get("/thread/likes/:threadId", async (req, res) => {
+  const { threadId } = req.params;
+
+  if (!threadLikes[threadId]) {
+    return res.json({ likes: 0 });
+  }
+
+  res.json({ likes: threadLikes[threadId].length });
+});
+
+router.post("/thread/replies", async (req, res) => {
+  //👇🏻 The post ID
+  const { id } = req.body;
+  //👇🏻 searches for the post
+  const result = threadList.filter((thread) => thread.id === id);
+  //👇🏻 return the title and replies
+  res.json({
+    replies: result[0].replies,
+    title: result[0].title,
+  });
+});
+
+router.post("/create/reply", async (req, res) => {
+  //👇🏻 accepts the post id, user id, and reply
+  const { id, userId, reply } = req.body;
+  //👇🏻 search for the exact post that was replied to
+  const result = threadList.filter((thread) => thread.id === id);
+  //👇🏻 search for the user via its id
+  const user = Object.values(users).filter((user) => user.id === userId);
+  //👇🏻 saves the user name and reply
+  result[0].replies.unshift({
+    userId: user[0].id,
+    name: user[0].username,
+    text: reply,
+  });
+
+  res.json({
+    message: "Response added successfully!",
+  });
+});
+
+module.exports = router;
