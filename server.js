@@ -1,7 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const app = express();
-const PORT = 4000;
+const port = process.env.PORT || 4000;
 const threadRoutes = require("./routes/threads-routes");
 
 app.use(express.urlencoded({ extended: true }));
@@ -20,6 +20,6 @@ app.get("/api", (req, res) => {
   });
 });
 
-app.listen(PORT, () => {
-  console.log(`Server listening on ${PORT}`);
+app.listen(port, () => {
+  console.log(`Server listening on ${port}`);
 });
