@@ -50,11 +50,17 @@ The backend application was deployed to Heroku and currently the front-end appli
 ## API Endpoints
 
 **POST /api/create/thread:** Create a new thread.
+
 **POST /api/create/reply:** Create a new reply.
+
 **POST /api/register:** Register a new user.
+
 **POST /api/:** Log in a user.
+
 **POST /api/thread/replies:** Get replies for a specific thread.
+
 **POST /api/thread/likes/:threadId:** Get the number of likes for a thread.
+
 **POST /api/thread/like:** Add a like to a thread.
 
 For detailed documentation on each endpoint, refer to the source code or API documentation.
