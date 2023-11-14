@@ -1,51 +1,147 @@
+/* 
+  Import Necessary Dependencies:
+  express is used to create a web server,
+  cors is middleware for handling cross-origin resource sharing,
+  router is an instance of the Express router to define routes.
+*/
 const express = require("express");
 const cors = require("cors");
 const router = express.Router();
 
+/*
+This sets up Cross-Origin Resource Sharing (CORS) options to allow 
+requests from any origin during development. The cors middleware is
+then applied to the router with these options.
+*/
 const corsOptions = {
   origin: "*", // Allow requests from any origin during development
   methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
   optionsSuccessStatus: 204,
 };
-
 router.use(cors(corsOptions));
 
+//This initializes an empty object (users) to store user data.
 const users = {};
+// Implement your user registration logic here
+/*
+This is a function that generates a unique ID using a random 
+alphanumeric string. It is used for creating unique identifiers for 
+users and threads.
+*/
+const generateID = () => Math.random().toString(36).substring(2, 10);
+const id = generateID();
+console.log(`Generated ID: ${id}`);
+users[id] = { id, email, password, username };
+console.log(`User registered with ID: ${id}`);
+console.log(`Users are ${JSON.stringify(users, null, 2)}`);
 
-// CREATE A USER Define the route for user registration
+/*
+CREATE A USER
+This route handles user registration. It checks if the provided 
+email already exists, generates a unique ID, registers the user, 
+and sends a success response. */
 router.post("/register", async (req, res) => {
   const { email, password, username } = req.body;
   console.log(JSON.stringify(req.body.username, null, 2)); // Log the req.body as a formatted JSON string
   console.log("Registration started...");
 
-  //Check if email already exists
+  /* 
+  -Check if email already exists 
+  -Object.values(users): This part of the code extracts all the values 
+  (user objects) from the users object and returns them as an array. 
+  Each user object in this array represents a registered user.
+  -.find((user) => user.email === email): This array method is used to
+   find the first element in the array that satisfies the provided 
+   testing function. In this case, the testing 
+   function (user) => user.email === email checks if the email 
+   property of the user object is equal to the provided email.
+  -If existingUserArray is not undefined, it means that a user with the 
+  provided email already exists in the users object.
+  - If existingUserArray is undefined, it means that there is no user 
+  with the provided email, and the registration can proceed.
+  -If existingUserArray is truthy (not undefined), it means there is 
+  already a user with the same email. The registration process should be 
+  halted, and an error response indicating that the email is already 
+  registered might be sent back.
+  -If existingUserArray is falsy (undefined), it means that the 
+  email is not found among the existing users, and the registration 
+  process can proceed.
+  */
   const existingUserArray = Object.values(users).find(
     (user) => user.email === email
   );
   if (existingUserArray) {
     return res.status(400).json({ error_message: "Email already registered" });
   }
-
-  // Implement your user registration logic here
-  const id = generateID();
-  console.log(`Generated ID: ${id}`);
-
-  users[id] = { id, email, password, username };
-  console.log(`User registered with ID: ${id}`);
-  console.log(`Users are ${JSON.stringify(users, null, 2)}`);
-
-  // For testing purposes, send a success JSON response
   res.status(201).json({
     message: "User registered successfully",
   });
 });
 
-//LOGIN A USER
+/*
+  LOGIN A USER
+  This route handles user login. It checks if the user with the provided
+  email and password exists and sends a success or error response 
+  accordingly.
+*/
 router.post("/", async (req, res) => {
+  /*
+  This line of code is using destructuring assignment to extract the 
+  email and password properties from the req.body object. Let me break 
+  it down:
+  req.body: This object represents the data sent in the request body.
+  In the context of a server, it's common to receive data from the 
+  client in the request body.
+  { email, password }: This is destructuring assignment in JavaScript. 
+  It's a concise way to extract properties from an object and
+  assign them to variables with the same names. In this case, 
+  it's extracting the email and password properties from req.body.
+  After this line executes:
+  email: Variable containing the value of the email property from req.body.
+  password: Variable containing the value of the password property
+  from req.body.
+*/
   const { email, password } = req.body;
-
-  // For testing purposes, check if the user exists in the in-memory "users" object
+  /*
+    - This line of code is creating an array (userArray) containing the values of 
+    the users object. 
+    - users: This is an object that presumably stores user information,
+    where each user is identified by a unique key. The keys are user
+    IDs, and the corresponding values are objects containing user 
+    details.
+    -Object.values(users): This is a method in JavaScript that returns
+     an array containing the values of the properties of an object. 
+     In this case, it extracts an array of user objects from the users
+    object.
+    After this line executes:
+    userArray: This variable contains an array of user objects, 
+    where each object represents a user and contains their details.
+  */
   const userArray = Object.values(users);
+  /*
+    - This line of code is using the find method on the userArray to 
+    search for a user with a specific email and password.
+    - userArray: This is an array containing user objects, typically 
+    obtained from the users object.
+    - .find(): This is an array method in JavaScript that iterates 
+    over each element in the array and returns the first element that 
+    satisfies the provided testing function.
+    - (u) => u.email === email && u.password === password: 
+    This is the testing function passed to find. It checks if the 
+    email and password properties of the user object (u) match the 
+    provided email and password values.
+    - if (user): This condition checks if a user object was found 
+    during the login attempt. If a user with the provided email 
+    and password exists, the condition evaluates to true.
+   - res.status(200).json If the condition is true, 
+   meaning a user was found, the server responds with a status code 
+   of 200 (OK) and a JSON object containing a success message and 
+   some user details (user ID and username). 
+   -else: If the condition is false, meaning no user was found with 
+   the provided credentials, the server responds with a status code of 
+   401 (Unauthorized) and a JSON object containing an error message 
+   indicating that the credentials are invalid.
+  */
   const user = userArray.find(
     (u) => u.email === email && u.password === password
   );
@@ -60,26 +156,99 @@ router.post("/", async (req, res) => {
   }
 });
 
-// Create an array to store threads
+/*
+This initializes an empty array (threadList) to store thread data.
+*/
 const threadList = [];
-const generateID = () => Math.random().toString(36).substring(2, 10);
 
-// POST route to create a new thread
+/* 
+CREATE A THREAD
+This route creates a new thread. It checks if required data 
+(thread and userId) is provided, adds the new thread to the array, 
+and sends a success response with the updated thread list.
+*/
 router.post("/create/thread", async (req, res) => {
+  /*
+  This line of code is using destructuring assignment to extract 
+  specific properties from the req.body object. Let's break it down:  
+  - req.body: This refers to the body of the HTTP request. In a POST request, 
+  it typically contains data that is sent to the server.
+  - { thread, userId, username }: This is a destructuring assignment.
+  It creates three variables (thread, userId, and username) and 
+  assigns them the corresponding properties from req.body.
+  So, if the structure of req.body is something like this:
+{
+  "thread": "Sample Thread",
+  "userId": "123",
+  "username": "john_doe"
+}
+  After the destructuring assignment, the variables will hold these 
+  values:
+  thread: "Sample Thread"
+  userId: "123"
+  username: "john_doe"
+  This syntax is often used in Express.js route handlers to
+  conveniently extract and use specific properties from incoming 
+  request bodies. In this context, it's likely part of handling the
+  creation of a new thread where the client sends these details in 
+  the request body.
+*/
   const { thread, userId, username } = req.body;
   console.log(
     `The req.body in threads-route ${JSON.stringify(req.body, null, 2)}`
   );
   const threadId = generateID();
 
-  // Check if both thread and userId are provided
+  /*
+  This block of code checks whether the thread and userId variables
+  are falsy (either null, undefined, 0, false, or an empty string). 
+  If either thread or userId is falsy, it means that one or both of 
+  these values is missing or invalid. In this case, the server 
+  responds with a 400 Bad Request status and a JSON object containing 
+  an error message.Let's break down the code:
+  !thread: This checks if the thread variable is falsy.
+  !userId: This checks if the userId variable is falsy.
+  The || (logical OR) operator is used to check if either thread or 
+  userId is falsy. If either is falsy (or both), it means that one or 
+  both of these values are missing or invalid.
+  If the condition is true (i.e., if either thread or userId is falsy),
+  the server responds with a 400 status and a JSON object containing 
+  an error message indicating that both thread and userId are required 
+  for the operation to proceed. This is a common practice to enforce 
+  required parameters in API endpoints and handle validation on the 
+  server side.
+*/
   if (!thread || !userId) {
     return res
       .status(400)
       .json({ error: "Both thread and userId are required." });
   }
 
-  // Add post details to the array
+  /*
+  This code adds a new thread to the threadList array. 
+  Let's break down the properties of the thread being added:
+    id: threadId: Assigns the unique identifier threadId to the id 
+    property of the new thread.
+    title: thread: Assigns the value of the thread variable to the
+    title property of the new thread.
+    userId: Assigns the value of the userId variable to the userId 
+    property of the new thread.
+    username: Assigns the value of the username variable to the 
+    username property of the new thread.
+    replies: []: Initializes an empty array for the replies property 
+    of the new thread. This array is intended to store replies to 
+    the thread.
+    likes: []: Initializes an empty array for the likes property 
+    of the new thread. This array is intended to store user
+    IDs that have liked the thread.
+  The unshift method is used to add the new thread to the beginning 
+  of the threadList array. This method modifies the array in place by 
+  adding elements to the front. The new thread will be the first 
+  element in the array after this operation.
+  Overall, this code snippet represents the creation of a new thread 
+  and its addition to the list of threads stored in the threadList 
+  array.
+*/
   threadList.unshift({
     id: threadId,
     title: thread,
@@ -89,13 +258,47 @@ router.post("/create/thread", async (req, res) => {
     likes: [],
   });
   console.log(`The threadlist is ${JSON.stringify(threadList, null, 2)}`);
-  // Send a success response with the updated thread list
+  /* 
+  This code snippet sends a JSON response to the client after 
+  successfully creating a new thread. Let's break down the response:
+  res.status(201): Sets the HTTP status code of the response to 201, 
+  which stands for "Created." This status code indicates that the 
+  request has been fulfilled and resulted in the creation of a new 
+  resource.
+  .json({ message: "Thread created successfully", threads: threadList }): 
+  Sends a JSON response to the client with two key-value pairs:
+  message: "Thread created successfully": A message indicating that 
+  the thread creation was successful.
+  threads: threadList: The array of threads (threadList) is included 
+  in the response, providing the client with the updated list of 
+  threads after the new thread has been added.
+  This response structure allows the client to receive information 
+  about the success of the thread creation operation along with the 
+  updated list of threads. The client can use this information to 
+  handle the response appropriately, such as displaying a success 
+  message or updating the user interface to reflect the newly created 
+  thread.
+*/
   res
     .status(201)
     .json({ message: "Thread created successfully", threads: threadList });
 });
 
-// Add a GET route on the server that returns all the threads.
+/*
+  SHOW/GET ALL THREADS
+  This route returns all threads stored in the threadList array.
+  This code snippet defines a route that handles GET requests to 
+  the "/all/threads" endpoint. Let's break down the functionality:
+  router.get("/all/threads", async (req, res) => {...}: Defines a 
+  route for handling HTTP GET requests to the "/all/threads" endpoint.
+  This endpoint is associated with the router object, which is an 
+  instance of the Express Router.
+  res.json({ threads: threadList }): Sends a JSON response to the 
+  client with a single key-value pair:
+  threads: threadList: The array of threads (threadList) is included 
+  in the response. This provides the client with a list of all threads 
+  available on the server.
+*/
 router.get("/all/threads", async (req, res) => {
   res.json({
     threads: threadList,
@@ -105,11 +308,31 @@ router.get("/all/threads", async (req, res) => {
 //Crate an array to store likes
 const threadLikes = {};
 
-//Create a POST route on the server that validates the reaction.
-// POST route to handle liking a thread
+/*
+  CREATE A LIKE
+  Create a POST route on the server that validates the reaction.
+  POST route to handle liking a thread
+  This route handles liking a thread. It checks if the thread exists, 
+  if the user has already liked it, adds the user to the likes array, 
+  and sends a success response.
+*/
 router.post("/thread/like", async (req, res) => {
   console.log(`req.body is ${req.body}`);
 
+  /*
+  This code snippet uses destructuring to extract values from the 
+  req.body object. Let's break it down:
+  req.body: Represents the body of the HTTP request. In the context 
+  of a POST request, this typically contains data submitted by the 
+  client.
+  { threadId, userId }: Uses object destructuring to create variables 
+  threadId and userId by extracting their corresponding values from 
+  req.body. This assumes that the body of the request contains 
+  properties named threadId and userId.
+  After this line, you can use threadId and userId as standalone 
+  variables in your code, which is often done to simplify the syntax 
+  and make the code more readable.
+*/
   const { threadId, userId } = req.body;
 
   // Find the thread by its ID
@@ -120,56 +343,198 @@ router.post("/thread/like", async (req, res) => {
     return res.status(404).json({ error_message: "Thread not found." });
   }
 
-  // Check if the user has already liked the thread
-  // Check if the user has already liked the thread
+  /* 
+  Check if the user has already liked the thread 
+  This code checks if a user has already liked a thread by 
+  examining the threadLikes object, which presumably stores 
+  information about which users have liked which threads. 
+  Let's break down the code:
+  threadLikes[threadId]: Accesses the value associated with the 
+  threadId key in the threadLikes object. This value is expected to 
+  be an array containing user IDs who have liked the thread.
+  threadLikes[threadId].includes(userId): Checks if the array
+  associated with threadId includes the userId. This would mean 
+  that the user has already liked the thread.If both conditions are 
+  true, it means the user has already liked the thread, and the code 
+  returns a 400 status with a JSON response indicating that the user 
+  has already liked the thread.
+*/
   if (threadLikes[threadId] && threadLikes[threadId].includes(userId)) {
     return res
       .status(400)
       .json({ error_message: "You've already liked this thread." });
   }
 
-  // Add the user to the likes array for this thread
+  /* 
+  This code checks if there is no array associated with the 
+  threadId key in the threadLikes object. If such an array does 
+  not exist, it initializes an empty array for that threadId. 
+  Let's break down the code:
+  !threadLikes[threadId]: Checks if there is no value associated 
+  with the threadId key in the threadLikes object. In other words, 
+  it checks if threadLikes[threadId] is falsy or undefined.
+  threadLikes[threadId] = []: If the condition is true 
+  (meaning there is no array for the threadId), it assigns an empty 
+  array to threadLikes[threadId].
+  This code ensures that each thread has an associated array 
+  in the threadLikes object, even if it's initially empty. 
+  This is important for later operations, such as adding user IDs 
+  to the array when they like a thread.
+*/
   if (!threadLikes[threadId]) {
     threadLikes[threadId] = [];
   }
 
-  // Add the user to the likes array
+  /*
+  This line of code adds a user ID to the array associated 
+  with a specific thread ID in the threadLikes object. 
+  Let's break down the code:
+  threadLikes[threadId]: Accesses the array associated with the 
+  specific threadId in the threadLikes object.
+  .push(userId): Adds the userId to the end of the array. 
+  The push method is used to insert the provided 
+  value (userId in this case) at the end of an array.
+  In the context of the code, this operation represents a user 
+  liking a particular thread. The user's ID (userId) is added to 
+  the array of likes for the specified thread (threadId). 
+  If the array doesn't exist for the thread, it is created and 
+  then the user's ID is added to it. This mechanism keeps track of 
+  users who have liked a specific thread.
+*/
   threadLikes[threadId].push(userId);
 
   // Send a success response
   return res.json({ message: "You've reacted to the post!" });
 });
 
+/*
+  SHOW/GET ALL LIKES for specific thread using it's id
+  This route returns the number of likes for a specific thread.
+*/
 router.get("/thread/likes/:threadId", async (req, res) => {
+  /* 
+  This line of code extracts the value of the threadId parameter 
+  from the request's parameters. In Express.js, route parameters 
+  are parts of the URL that capture values, and they are accessible 
+  through req.params.
+  Let's break down the code:
+  req.params: Represents the parameters in the URL.
+  { threadId }: Uses destructuring to extract the value of 
+  the threadId parameter.
+  In summary, this line of code retrieves the threadId 
+  from the parameters of the incoming HTTP request. 
+  This is often used in routes where specific identifiers 
+  (such as thread IDs) are part of the URL, allowing 
+  the server to perform actions or retrieve data related 
+  to that specific identifier.
+*/
   const { threadId } = req.params;
 
+  /*
+  This code snippet checks if there are likes recorded for a specific 
+  thread (threadId). Let's break it down:
+  threadLikes[threadId]: Accesses the array of user IDs who have 
+  liked the thread with the specified threadId.
+  !threadLikes[threadId]: Checks if this array is falsy, meaning 
+  it's either undefined or an empty array.
+  If there are no likes recorded for the specified thread, 
+  the server responds with a JSON object containing the information 
+  that there are 0 likes:
+*/
   if (!threadLikes[threadId]) {
     return res.json({ likes: 0 });
   }
-
+  /*
+  This code snippet sends a JSON response containing the number of likes 
+  for a specific thread (threadId). Let's break it down:
+  threadLikes[threadId]: Accesses the array of user IDs who have liked 
+  the thread with the specified threadId
+  threadLikes[threadId].length: Retrieves the length of the array, 
+  representing the number of likes.
+  The server responds with a JSON object containing the number of 
+  likes for the specified thread:{ likes: // number of likes }. This 
+  provides the client with information about the current number of 
+  likes for the given thread.
+*/
   res.json({ likes: threadLikes[threadId].length });
 });
-
+/*
+This route returns replies and the title for a specific thread.
+*/
 router.post("/thread/replies", async (req, res) => {
   //👇🏻 The post ID
   const { id } = req.body;
   //👇🏻 searches for the post
   const result = threadList.filter((thread) => thread.id === id);
-  //👇🏻 return the title and replies
+  /*
+  -This code snippet sends a JSON response containing the replies 
+  and title of a specific thread. Let's break it down:
+  -result[0].replies: Accesses the array of replies for the specific 
+  thread. This array contains objects with information about each 
+  reply, such as user ID, username, and the reply text.
+  -result[0].title: Retrieves the title of the specific thread.
+  -The server responds with a JSON object containing the replies and 
+  title:
+    {
+        replies: // array of replies 
+        title: // title of the thread
+    }
+  -This provides the client with information about the replies and 
+  title of the specified thread, allowing it to display or process 
+  this information as needed.
+*/
   res.json({
     replies: result[0].replies,
     title: result[0].title,
   });
 });
-
+/*
+CREATE A REPLY
+This route handles creating a reply for a thread. It adds the reply 
+to the thread's replies array and sends a success response.
+*/
 router.post("/create/reply", async (req, res) => {
-  //👇🏻 accepts the post id, user id, and reply
+  /*
+    This line of code is using destructuring assignment to extract the id,
+    userId, and reply properties from the req.body object. Here's 
+    a breakdown:
+    req.body: This object represents the data that was sent in the 
+    request body. In this case, it is expected to contain properties 
+    like id, userId, and reply.
+    const { id, userId, reply }: This syntax is called destructuring 
+    assignment. It creates three constants (id, userId, and reply) 
+    and assigns them the values of the corresponding properties 
+    from req.body. It's a concise way to extract specific properties 
+    from an object
+    After this line, you can use these constants 
+    (id, userId, and reply) in the subsequent logic of your route 
+    handler. For example, you might use them to identify the post, 
+    the user making the reply, and the content of the reply.
+*/
   const { id, userId, reply } = req.body;
   //👇🏻 search for the exact post that was replied to
   const result = threadList.filter((thread) => thread.id === id);
   //👇🏻 search for the user via its id
   const user = Object.values(users).filter((user) => user.id === userId);
-  //👇🏻 saves the user name and reply
+  /*
+  This code is adding a new reply to an array of replies associated 
+  with a specific post. Let's break it down:
+  result[0]: This is accessing the first element in the result array. 
+  It appears that result is an array of posts, and this line is 
+  targeting the first post.
+  .replies: This assumes that each post has a property named replies, 
+  which is an array containing the replies associated with that post.
+  .unshift({...}): This is an array method that adds elements to 
+  the beginning of an array. In this case, it's adding a new object 
+  to the replies array.
+  The object being added has three properties:
+  userId: It takes the id property from the first user in the user 
+  array. This assumes that user is an array containing user objects, 
+  and the user who made the reply is the first user in that array.
+  name: It takes the username property from the same user.
+  text: It takes the reply variable, which presumably holds the 
+  content of the reply.
+*/
   result[0].replies.unshift({
     userId: user[0].id,
     name: user[0].username,
@@ -181,4 +546,8 @@ router.post("/create/reply", async (req, res) => {
   });
 });
 
+/*
+This exports the router so that it can be used in other files, 
+typically in the main server.js file.
+*/
 module.exports = router;
