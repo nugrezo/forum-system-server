@@ -21,7 +21,8 @@ const corsOptions = {
 router.use(cors(corsOptions));
 
 //This initializes an empty object (users) to store user data.
-const users = {};
+const users = [];
+
 // Implement your user registration logic here
 /*
 This is a function that generates a unique ID using a random 
@@ -29,10 +30,6 @@ alphanumeric string. It is used for creating unique identifiers for
 users and threads.
 */
 const generateID = () => Math.random().toString(36).substring(2, 10);
-const id = generateID();
-console.log(`Generated ID: ${id}`);
-users[id] = { id, email, password, username };
-console.log(`User registered with ID: ${id}`);
 console.log(`Users are ${JSON.stringify(users, null, 2)}`);
 
 /*
@@ -42,37 +39,23 @@ email already exists, generates a unique ID, registers the user,
 and sends a success response. */
 router.post("/register", async (req, res) => {
   const { email, password, username } = req.body;
-  console.log(JSON.stringify(req.body.username, null, 2)); // Log the req.body as a formatted JSON string
+  const id = generateID();
+  console.log({ email, password, username, id });
+  console.log(JSON.stringify(req.body, null, 2)); // Log the req.body as a formatted JSON string
   console.log("Registration started...");
-
-  /* 
-  -Check if email already exists 
-  -Object.values(users): This part of the code extracts all the values 
-  (user objects) from the users object and returns them as an array. 
-  Each user object in this array represents a registered user.
-  -.find((user) => user.email === email): This array method is used to
-   find the first element in the array that satisfies the provided 
-   testing function. In this case, the testing 
-   function (user) => user.email === email checks if the email 
-   property of the user object is equal to the provided email.
-  -If existingUserArray is not undefined, it means that a user with the 
-  provided email already exists in the users object.
-  - If existingUserArray is undefined, it means that there is no user 
-  with the provided email, and the registration can proceed.
-  -If existingUserArray is truthy (not undefined), it means there is 
-  already a user with the same email. The registration process should be 
-  halted, and an error response indicating that the email is already 
-  registered might be sent back.
-  -If existingUserArray is falsy (undefined), it means that the 
-  email is not found among the existing users, and the registration 
-  process can proceed.
-  */
-  const existingUserArray = Object.values(users).find(
-    (user) => user.email === email
+  const result = users.filter(
+    (user) => user.email === email && user.password === password
   );
-  if (existingUserArray) {
-    return res.status(400).json({ error_message: "Email already registered" });
+  if (result.length === 0) {
+    const newUser = { id, email, password, username };
+    //👇🏻 adds the user to the database (array)
+    users.push(newUser);
+    //👇🏻 returns a success message
+    return res.json({
+      message: "Account created successfully!",
+    });
   }
+
   res.status(201).json({
     message: "User registered successfully",
   });
@@ -102,7 +85,9 @@ router.post("/", async (req, res) => {
   from req.body.
 */
   const { email, password } = req.body;
-  /*
+  console.log(
+    `The req.body in login user ${JSON.stringify(req.body, null, 2)}`
+  ); /*
     - This line of code is creating an array (userArray) containing the values of 
     the users object. 
     - users: This is an object that presumably stores user information,
